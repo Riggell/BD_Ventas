@@ -137,7 +137,7 @@ INSERT INTO pagos (id_venta, monto, fecha_pago) VALUES
 #Transacciones: Mínimo 2 transacciones que involucren múltiples operaciones una de ellas con 'Savepoint'.
 #Procedimiento Almacenado: 1 procedimiento almacenado.
 #Usuarios y Roles: Mínimo 2 usuarios con diferentes roles (ej. administrador, usuario normal).
-
+#XD
 
 
 
