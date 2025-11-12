@@ -54,14 +54,15 @@ CREATE INDEX idx_pagos_venta ON pagos(id_venta);
 INSERT INTO clientes (nombre, ciudad, email) VALUES
 ('Carlos Gómez', 'Bogotá', 'carlos.gomez@example.com'),
 ('Laura Martínez', 'Medellín', 'laura.martinez@example.com'),
-('Andrés Rojas', 'Cali', 'andres.rojas@example.com'),
-('María López', 'Barranquilla', 'maria.lopez@example.com'),
-('Santiago Ramírez', 'Cartagena', 'santiago.ramirez@example.com'),
+('Andrés Rojas', 'Cali', 'andres.rojas@example.com'), 
+('María López', 'Cali', 'maria.lopez@example.com'), #4
+('Santiago Ramírez', 'Cali', 'santiago.ramirez@example.com'), #5
 ('Camila Torres', 'Pereira', 'camila.torres@example.com'),
 ('Felipe Herrera', 'Manizales', 'felipe.herrera@example.com'),
 ('Valentina Díaz', 'Bucaramanga', 'valentina.diaz@example.com'),
 ('Julián Castro', 'Santa Marta', 'julian.castro@example.com'),
 ('Paula Jiménez', 'Cúcuta', 'paula.jimenez@example.com');
+
 
 INSERT INTO productos (nombre, precio, stock) VALUES
 ('Camiseta deportiva', 65000.00, 40),
@@ -78,15 +79,17 @@ INSERT INTO productos (nombre, precio, stock) VALUES
 
 INSERT INTO ventas (id_cliente, fecha_venta, total) VALUES
 (1, '2025-10-01', 215000.00),
-(2, '2025-10-02', 90000.00),
+(1, '2025-10-02', 90000.00),  
 (3, '2025-10-03', 355000.00),
 (4, '2025-10-04', 120000.00),
-(5, '2025-10-05', 65000.00),
-(6, '2025-10-06', 275000.00),
-(7, '2025-10-07', 150000.00),
+(5, '2025-10-04', 65000.00),
+(6, '2025-10-04', 275000.00),
+(7, '2025-10-04', 150000.00),
 (8, '2025-10-08', 235000.00),
 (9, '2025-10-09', 180000.00),
 (10, '2025-10-10', 255000.00);
+
+SELECT * FROM ventas;
 
 
 INSERT INTO detalle_venta (id_venta, id_producto, cantidad, subtotal) VALUES
@@ -122,7 +125,7 @@ INSERT INTO detalle_venta (id_venta, id_producto, cantidad, subtotal) VALUES
 
 INSERT INTO pagos (id_venta, monto, fecha_pago) VALUES
 (1, 215000.00, '2025-10-01'),
-(2, 90000.00, '2025-10-02'),
+(2, 90000.00, '2025-10-01'),
 (3, 355000.00, '2025-10-03'),
 (4, 120000.00, '2025-10-04'),
 (5, 65000.00, '2025-10-05'),
@@ -133,11 +136,118 @@ INSERT INTO pagos (id_venta, monto, fecha_pago) VALUES
 (10, 255000.00, '2025-10-10');
 
 
-#Subconsultas: Mínimo 3 subconsultas en diferentes consultas.
-#Transacciones: Mínimo 2 transacciones que involucren múltiples operaciones una de ellas con 'Savepoint'.
-#Procedimiento Almacenado: 1 procedimiento almacenado.
-#Usuarios y Roles: Mínimo 2 usuarios con diferentes roles (ej. administrador, usuario normal).
-#XD
+#Subconsultas: 
+
+#Subconsulta_1
+SELECT id_cliente, nombre
+FROM clientes
+WHERE id_cliente IN (
+    SELECT id_cliente
+    FROM ventas
+);
+
+#Subconsulta_2
+SELECT id_producto, nombre
+FROM productos
+WHERE id_producto IN (
+    SELECT id_producto
+    FROM detalle_venta
+);
+
+#Subconsulta_3
+SELECT id_venta, total
+FROM ventas
+WHERE id_venta IN (
+    SELECT id_venta
+    FROM pagos
+);
+
+#Procedimientos Almacenados
+
+DELIMITER //
+
+CREATE PROCEDURE verificar_disponiblidad_producto_venta(
+	IN p_id_cliente INT,
+    IN p_id_producto INT,
+    IN p_cantidad_producto INT,
+    IN p_precio_producto DECIMAL(10,2),
+    OUT confirmacion INT
+)
+BEGIN
+	DECLARE stock_disponible INT;
+    DECLARE precio_total DECIMAL(10,2);
+
+    SELECT stock INTO stock_disponible
+    FROM productos 
+    WHERE id_producto = p_id_producto;
+    
+    IF stock_disponible >= p_cantidad_producto THEN
+    
+		SET precio_total = p_cantidad_producto * p_precio_producto;
+    
+        INSERT INTO ventas (id_cliente, fecha_venta, total)
+        VALUES (p_id_cliente, CURDATE(), precio_total);
+        
+        
+        SET confirmacion = LAST_INSERT_ID();
+        
+	ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'STOCK INSUFICENTE';
+        SET confirmacion = 0;
+        
+    END IF;
+    
+END //
+
+DELIMITER ;
+
+#Ingresar detalles de venta
+
+DELIMITER //
+
+CREATE PROCEDURE ingresar_detalles_venta(
+    IN p_id_cliente INT,
+    IN p_id_producto INT,
+    IN p_cantidad_producto INT,
+    IN p_precio_producto DECIMAL(10,2),
+    OUT confirmacion TINYINT(1)
+)
+BEGIN
+    DECLARE id_venta INT;
+    DECLARE subtotal DECIMAL(10,2);
+
+    SET subtotal = p_cantidad_producto * p_precio_producto;
+
+    CALL verificar_disponiblidad_producto_venta(
+        p_id_cliente,
+        p_id_producto,
+        p_cantidad_producto,
+        p_precio_producto,
+        id_venta
+    );
+
+    IF id_venta != 0 THEN
+        INSERT INTO detalle_venta (id_venta, id_producto, cantidad, subtotal)
+        VALUES (id_venta, p_id_producto, p_cantidad_producto, subtotal);
+
+        UPDATE productos 
+        SET stock = stock - p_cantidad_producto
+        WHERE id_producto = p_id_producto;
+
+        SET confirmacion = 1;
+    ELSE
+        SET confirmacion = 0;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+
+
+
 
 
 
