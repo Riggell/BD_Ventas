@@ -243,7 +243,9 @@ END //
 
 DELIMITER ;
 
+##--- transaciones minimo 2 que involucren multiples operaciones 1 una set point 
 
+##--- usuarios y roles minimo 2 con diferentes roles / ej admin y usario normal 
 
 
 
