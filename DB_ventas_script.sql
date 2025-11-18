@@ -243,11 +243,75 @@ END //
 
 DELIMITER ;
 
-##--- transaciones minimo 2 que involucren multiples operaciones 1 una set point 
+-- =========================================================
+-- TRANSACCIÓN #1 SIN SAVEPOINT
+-- =========================================================
 
-##--- usuarios y roles minimo 2 con diferentes roles / ej admin y usario normal 
+START TRANSACTION;
 
+INSERT INTO ventas (id_cliente, fecha_venta, total)
+VALUES (1, CURDATE(), 150000);
+SET @idVenta = LAST_INSERT_ID();
 
+INSERT INTO detalle_venta (id_venta, id_producto, cantidad, subtotal)
+VALUES (@idVenta, 1, 2, 130000);
+
+UPDATE productos SET stock = stock - 2 WHERE id_producto = 1;
+
+INSERT INTO pagos(id_venta, monto, fecha_pago)
+VALUES (@idVenta, 150000, CURDATE());
+
+COMMIT;
+
+-- =========================================================
+-- TRANSACCIÓN #2 CON SAVEPOINT
+-- =========================================================
+
+START TRANSACTION;
+
+INSERT INTO ventas (id_cliente, fecha_venta, total)
+VALUES (2, CURDATE(), 200000);
+SET @venta2 = LAST_INSERT_ID();
+
+SAVEPOINT producto1;
+INSERT INTO detalle_venta (id_venta, id_producto, cantidad, subtotal)
+VALUES (@venta2, 2, 1, 90000);
+UPDATE productos SET stock = stock - 1 WHERE id_producto = 2;
+
+SAVEPOINT producto2;
+SELECT stock INTO @stock_prod FROM productos WHERE id_producto = 9;
+
+IF @stock_prod < 5 THEN
+    ROLLBACK TO producto2;
+ELSE
+    INSERT INTO detalle_venta VALUES (NULL, @venta2, 9, 5, 110000);
+    UPDATE productos SET stock = stock - 5 WHERE id_producto = 9;
+END IF;
+
+COMMIT;
+
+-- =========================================================
+-- USUARIOS Y ROLES
+-- =========================================================
+
+CREATE ROLE admin_role;
+CREATE ROLE vendedor_role;
+
+GRANT ALL PRIVILEGES ON bd_ventas_proyecto_final.* TO admin_role;
+
+GRANT SELECT, INSERT, UPDATE ON ventas TO vendedor_role;
+GRANT SELECT, INSERT ON detalle_venta TO vendedor_role;
+GRANT SELECT ON productos TO vendedor_role;
+GRANT SELECT, INSERT ON pagos TO vendedor_role;
+
+CREATE USER 'admin_user'@'localhost' IDENTIFIED BY 'Admin123!';
+GRANT admin_role TO 'admin_user'@'localhost';
+
+CREATE USER 'vendedor1'@'localhost' IDENTIFIED BY 'Vendedor123!';
+Grant vendedor_role TO 'vendedor1'@'localhost';
+
+SET DEFAULT ROLE admin_role TO 'admin_user'@'localhost';
+SET DEFAULT ROLE vendedor_role TO 'vendedor1'@'localhost';
 
 
 
