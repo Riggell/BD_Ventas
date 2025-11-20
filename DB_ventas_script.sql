@@ -1,6 +1,18 @@
+/* ============================================================
+   BASE DE DATOS SISTEMA DE VENTAS
+              Proyecto Final 
+   ============================================================ */
+
 CREATE DATABASE bd_ventas_proyecto_final;
 USE bd_ventas_proyecto_final;
 
+/* ============================================================
+   TABLAS 
+   ============================================================ */
+
+-- ===========================
+-- Tabla: Clientes
+-- ===========================
 CREATE TABLE clientes (
   id_cliente INT PRIMARY KEY AUTO_INCREMENT,
   nombre VARCHAR(100) NOT NULL,
@@ -9,6 +21,9 @@ CREATE TABLE clientes (
   creado_en DATETIME DEFAULT NOW()
 );
 
+-- ===========================
+-- Tabla: Productos
+-- ===========================
 CREATE TABLE productos (
   id_producto INT PRIMARY KEY AUTO_INCREMENT,
   nombre VARCHAR(120) NOT NULL,
@@ -17,6 +32,9 @@ CREATE TABLE productos (
   creado_en DATETIME DEFAULT NOW()
 );
 
+-- ===========================
+-- Tabla: Ventas
+-- ===========================
 CREATE TABLE ventas (
   id_venta INT PRIMARY KEY AUTO_INCREMENT,
   id_cliente INT NOT NULL,
@@ -26,6 +44,9 @@ CREATE TABLE ventas (
   CONSTRAINT fk_ventas_cliente FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
 );
 
+-- ===========================
+-- Tabla: Detalle de venta
+-- ===========================
 CREATE TABLE detalle_venta (
   id_detalle INT PRIMARY KEY AUTO_INCREMENT,
   id_venta INT NOT NULL,
@@ -36,6 +57,9 @@ CREATE TABLE detalle_venta (
   CONSTRAINT fk_detalle_venta_producto FOREIGN KEY (id_producto) REFERENCES productos(id_producto)
 );
 
+-- ===========================
+-- Tabla: Pagos
+-- ===========================
 CREATE TABLE pagos (
   id_pago INT PRIMARY KEY AUTO_INCREMENT,
   id_venta INT NOT NULL,
@@ -45,25 +69,36 @@ CREATE TABLE pagos (
   CONSTRAINT fk_pagos_venta FOREIGN KEY (id_venta) REFERENCES ventas(id_venta)
 );
 
+/* ============================================================
+   ÍNDICES
+   ============================================================ */
+
 CREATE INDEX idx_ventas_cliente ON ventas(id_cliente);
 CREATE INDEX idx_detalle_venta_producto ON detalle_venta(id_producto);
 CREATE INDEX idx_pagos_venta ON pagos(id_venta);
 
-#Inserción de datos *******************************************************
+/* ============================================================
+   INSERCIÓN DE DATOS (DML)
+   ============================================================ */
 
+-- ===========================
+-- Datos: Clientes
+-- ===========================
 INSERT INTO clientes (nombre, ciudad, email) VALUES
 ('Carlos Gómez', 'Bogotá', 'carlos.gomez@example.com'),
 ('Laura Martínez', 'Medellín', 'laura.martinez@example.com'),
-('Andrés Rojas', 'Cali', 'andres.rojas@example.com'), 
-('María López', 'Cali', 'maria.lopez@example.com'), #4
-('Santiago Ramírez', 'Cali', 'santiago.ramirez@example.com'), #5
+('Andrés Rojas', 'Cali', 'andres.rojas@example.com'),
+('María López', 'Cali', 'maria.lopez@example.com'),
+('Santiago Ramírez', 'Cali', 'santiago.ramirez@example.com'),
 ('Camila Torres', 'Pereira', 'camila.torres@example.com'),
 ('Felipe Herrera', 'Manizales', 'felipe.herrera@example.com'),
 ('Valentina Díaz', 'Bucaramanga', 'valentina.diaz@example.com'),
 ('Julián Castro', 'Santa Marta', 'julian.castro@example.com'),
 ('Paula Jiménez', 'Cúcuta', 'paula.jimenez@example.com');
 
-
+-- ===========================
+-- Datos: Productos
+-- ===========================
 INSERT INTO productos (nombre, precio, stock) VALUES
 ('Camiseta deportiva', 65000.00, 40),
 ('Pantalón jean', 90000.00, 35),
@@ -76,7 +111,9 @@ INSERT INTO productos (nombre, precio, stock) VALUES
 ('Bolso de cuero', 220000.00, 10),
 ('Cinturón clásico', 55000.00, 25);
 
-
+-- ===========================
+-- Datos: Ventas
+-- ===========================
 INSERT INTO ventas (id_cliente, fecha_venta, total) VALUES
 (1, '2025-10-01', 215000.00),
 (1, '2025-10-02', 90000.00),  
@@ -89,40 +126,33 @@ INSERT INTO ventas (id_cliente, fecha_venta, total) VALUES
 (9, '2025-10-09', 180000.00),
 (10, '2025-10-10', 255000.00);
 
-SELECT * FROM ventas;
-
-
+-- ===========================
+-- Datos: Detalle de venta
+-- ===========================
 INSERT INTO detalle_venta (id_venta, id_producto, cantidad, subtotal) VALUES
 (1, 1, 2, 130000.00),
 (1, 5, 1, 35000.00),
 (1, 10, 1, 55000.00),
-
 (2, 2, 1, 90000.00),
-
 (3, 3, 1, 150000.00),
 (3, 4, 1, 200000.00),
 (3, 5, 1, 35000.00),
-
 (4, 7, 1, 120000.00),
-
 (5, 1, 1, 65000.00),
-
 (6, 6, 1, 180000.00),
 (6, 8, 2, 90000.00),
 (6, 5, 1, 35000.00),
-
 (7, 3, 1, 150000.00),
-
 (8, 9, 1, 220000.00),
 (8, 5, 1, 35000.00),
-
 (9, 7, 1, 120000.00),
 (9, 1, 1, 65000.00),
-
 (10, 4, 1, 200000.00),
 (10, 2, 1, 90000.00);
 
-
+-- ===========================
+-- Datos: Pagos
+-- ===========================
 INSERT INTO pagos (id_venta, monto, fecha_pago) VALUES
 (1, 215000.00, '2025-10-01'),
 (2, 90000.00, '2025-10-01'),
@@ -135,37 +165,34 @@ INSERT INTO pagos (id_venta, monto, fecha_pago) VALUES
 (9, 180000.00, '2025-10-09'),
 (10, 255000.00, '2025-10-10');
 
+/* ============================================================
+   CONSULTAS CON SUBCONSULTAS
+   ============================================================ */
 
-#Subconsultas: 
-
-#Subconsulta_1
+-- 1. Clientes que han realizado al menos una venta
 SELECT id_cliente, nombre
 FROM clientes
-WHERE id_cliente IN (
-    SELECT id_cliente
-    FROM ventas
-);
+WHERE id_cliente IN (SELECT id_cliente FROM ventas);
 
-#Subconsulta_2
+-- 2. Productos que han sido vendidos
 SELECT id_producto, nombre
 FROM productos
-WHERE id_producto IN (
-    SELECT id_producto
-    FROM detalle_venta
-);
+WHERE id_producto IN (SELECT id_producto FROM detalle_venta);
 
-#Subconsulta_3
+-- 3. Ventas que ya tienen pago registrado
 SELECT id_venta, total
 FROM ventas
-WHERE id_venta IN (
-    SELECT id_venta
-    FROM pagos
-);
+WHERE id_venta IN (SELECT id_venta FROM pagos);
 
-#Procedimientos Almacenados
+/* ============================================================
+   PROCEDIMIENTOS ALMACENADOS
+   ============================================================ */
 
 DELIMITER //
 
+-- ============================================================
+-- PROCESO 1: Verificar stock y crear venta
+-- ============================================================
 CREATE PROCEDURE verificar_disponiblidad_producto_venta(
 	IN p_id_cliente INT,
     IN p_id_producto INT,
@@ -182,30 +209,20 @@ BEGIN
     WHERE id_producto = p_id_producto;
     
     IF stock_disponible >= p_cantidad_producto THEN
-    
 		SET precio_total = p_cantidad_producto * p_precio_producto;
-    
         INSERT INTO ventas (id_cliente, fecha_venta, total)
         VALUES (p_id_cliente, CURDATE(), precio_total);
-        
-        
         SET confirmacion = LAST_INSERT_ID();
-        
 	ELSE
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'STOCK INSUFICENTE';
         SET confirmacion = 0;
-        
     END IF;
-    
 END //
 
-DELIMITER ;
-
-#Ingresar detalles de venta
-
-DELIMITER //
-
+-- ============================================================
+-- PROCESO 2: Agregar detalle y actualizar stock
+-- ============================================================
 CREATE PROCEDURE ingresar_detalles_venta(
     IN p_id_cliente INT,
     IN p_id_producto INT,
@@ -243,10 +260,13 @@ END //
 
 DELIMITER ;
 
--- =========================================================
--- TRANSACCIÓN #1 SIN SAVEPOINT
--- =========================================================
+/* ============================================================
+   TRANSACCIONES
+   ============================================================ */
 
+-- ============================================================
+-- TRANSACCIÓN 1 (SIN SAVEPOINT)
+-- ============================================================
 START TRANSACTION;
 
 INSERT INTO ventas (id_cliente, fecha_venta, total)
@@ -263,10 +283,9 @@ VALUES (@idVenta, 150000, CURDATE());
 
 COMMIT;
 
--- =========================================================
--- TRANSACCIÓN #2 CON SAVEPOINT
--- =========================================================
-
+-- ============================================================
+-- TRANSACCIÓN 2 (CON SAVEPOINT)
+-- ============================================================
 START TRANSACTION;
 
 INSERT INTO ventas (id_cliente, fecha_venta, total)
@@ -290,13 +309,19 @@ END IF;
 
 COMMIT;
 
--- =========================================================
--- USUARIOS Y ROLES
--- =========================================================
+/* ============================================================
+   CREACIÓN DE ROLES Y USUARIOS
+   ============================================================ */
 
+-- ===========================
+-- Roles
+-- ===========================
 CREATE ROLE admin_role;
 CREATE ROLE vendedor_role;
 
+-- ===========================
+-- Permisos
+-- ===========================
 GRANT ALL PRIVILEGES ON bd_ventas_proyecto_final.* TO admin_role;
 
 GRANT SELECT, INSERT, UPDATE ON ventas TO vendedor_role;
@@ -304,11 +329,14 @@ GRANT SELECT, INSERT ON detalle_venta TO vendedor_role;
 GRANT SELECT ON productos TO vendedor_role;
 GRANT SELECT, INSERT ON pagos TO vendedor_role;
 
+-- ===========================
+-- Usuarios
+-- ===========================
 CREATE USER 'admin_user'@'localhost' IDENTIFIED BY 'Admin123!';
 GRANT admin_role TO 'admin_user'@'localhost';
 
 CREATE USER 'vendedor1'@'localhost' IDENTIFIED BY 'Vendedor123!';
-Grant vendedor_role TO 'vendedor1'@'localhost';
+GRANT vendedor_role TO 'vendedor1'@'localhost';
 
 SET DEFAULT ROLE admin_role TO 'admin_user'@'localhost';
 SET DEFAULT ROLE vendedor_role TO 'vendedor1'@'localhost';
